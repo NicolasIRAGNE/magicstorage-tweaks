@@ -14,5 +14,7 @@ public sealed class PartialIngredientsFilter : FilteringOption {
 
 	public override bool GetDefaultVisibility(bool craftingGUI) => craftingGUI;
 
-	public override Position GetDefaultPosition() => new AfterParent(FilteringOptionLoader.Definitions.All);
+	public override Position GetDefaultPosition() => new Between(
+		FilteringOptionLoader.Definitions.All,
+		FilteringOptionLoader.Definitions.Weapon);
 }
