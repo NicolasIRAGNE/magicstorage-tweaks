@@ -7,3 +7,4 @@ modReferences = MagicStorage@0.7.0.11
 hideCode = false
 hideResources = false
 includeSource = true
+buildIgnore = media/*
