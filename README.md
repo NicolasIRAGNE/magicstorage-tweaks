@@ -16,11 +16,11 @@ The implementation uses Magic Storage's public filtering extension and narrowly 
 
 ## Using the filter
 
-Open a Magic Storage Crafting Interface and select the material-filter icon whose tooltip says “Show recipes with at least one stored ingredient.” In the modern configurable button layout, first enable `Partial Ingredients` from Magic Storage's filtering configuration page if it is not already assigned to a visible button.
+Open a Magic Storage Crafting Interface and select the gold crafting-grid icon with one green ingredient slot whose tooltip says “Show recipes with at least one stored ingredient.” In the modern configurable button layout, first enable `Partial Ingredients` from Magic Storage's filtering configuration page if it is not already assigned to a visible button.
 
 Recipe-group alternatives and Magic Storage infinite/module-provided ingredients count as present. Only ingredients required directly by the recipe are considered; recursive subrecipe ingredients are not used for inclusion.
 
-The local test build is not a Workshop release. A distinct, non-template `icon.png` must be added before a future Workshop publication.
+The local test build is not a Workshop release.
 
 ## Local build
 

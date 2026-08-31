@@ -1,5 +1,5 @@
 author = NicolasIRAGNE
-version = 0.1.0
+version = 0.1.1
 displayName = Jacky's Magic Storage Tweaks
 homepage = https://github.com/NicolasIRAGNE/JackysMagicStorageTweaks
 side = Client

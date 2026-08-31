@@ -6,7 +6,7 @@ namespace JackysMagicStorageTweaks;
 public sealed class PartialIngredientsFilter : FilteringOption {
 	public override ItemFilter.Filter Filter => ItemFilter.All;
 
-	public override string Texture => "MagicStorage/Assets/FilterMaterials";
+	public override string Texture => "JackysMagicStorageTweaks/Assets/PartialIngredients";
 
 	public override string Name => "PartialIngredients";
 
