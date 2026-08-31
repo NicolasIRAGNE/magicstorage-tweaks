@@ -1,4 +1,4 @@
-# Jacky's Magic Storage Tweaks
+# jacky's Magic Storage Tweaks
 
 A small standalone companion mod for Magic Storage.
 

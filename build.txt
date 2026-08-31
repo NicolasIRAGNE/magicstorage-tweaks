@@ -1,7 +1,7 @@
 author = NicolasIRAGNE
 version = 0.1.6
-displayName = Jacky's Magic Storage Tweaks
-homepage = https://github.com/NicolasIRAGNE/JackysMagicStorageTweaks
+displayName = jacky's Magic Storage Tweaks
+homepage = https://github.com/NicolasIRAGNE/magicstorage-tweaks
 side = Client
 modReferences = MagicStorage@0.7.0.11
 hideCode = false

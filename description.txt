@@ -1,4 +1,4 @@
-Jacky's Magic Storage Tweaks is currently a standalone companion mod for Magic Storage.
+jacky's Magic Storage Tweaks is currently a standalone companion mod for Magic Storage.
 
 For now, it adds an "Include partial recipes" toggle to the Crafting Access. Turn it on to also show recipes when at least one required ingredient is stored.
 

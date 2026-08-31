@@ -37,7 +37,7 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 
 		Version version = magicStorage.Version;
 		if (version.Major != 0 || version.Minor != 7 || version.Build != 0 || version.Revision < 11)
-			throw new NotSupportedException($"Magic Storage {version} is not supported. Jacky's Magic Storage Tweaks targets the v0.7.0.11 stable line.");
+			throw new NotSupportedException($"Magic Storage {version} is not supported. jacky's Magic Storage Tweaks targets the v0.7.0.11 stable line.");
 
 		MethodInfo getRecipes = typeof(ItemSorter).GetMethod(
 			nameof(ItemSorter.GetRecipes),
