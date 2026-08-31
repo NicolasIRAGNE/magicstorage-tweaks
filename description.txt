@@ -1,3 +1,3 @@
-Jacky's Magic Storage Tweaks adds a client-side crafting filter to the official Magic Storage mod. The filter shows a recipe when the connected storage network supplies at least one direct ingredient.
+Jacky's Magic Storage Tweaks adds an “Include partial recipes” toggle to the official Magic Storage mod. With the available-recipes mode selected, it also shows recipes when the connected network supplies at least one direct ingredient.
 
 Crafting stations and recipe conditions do not affect inclusion in this filter. Magic Storage still marks recipes unavailable when the complete crafting requirements are not met.

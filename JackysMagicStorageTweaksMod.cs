@@ -1,8 +1,10 @@
 using MagicStorage;
 using MagicStorage.Common.Systems;
-using MagicStorage.CrossMod;
 using MagicStorage.Sorting;
+using MagicStorage.UI;
+using MagicStorage.UI.States;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Terraria;
@@ -15,6 +17,19 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 	private delegate ParallelQuery<Recipe> HookGetRecipes(OrigGetRecipes orig, StorageGUI.ThreadContext thread);
 	private delegate void OrigSetRefresh(bool forceFullRefresh);
 	private delegate void HookSetRefresh(OrigSetRefresh orig, bool forceFullRefresh);
+	private delegate void OrigInitFilterButtons(CraftingUIState.RecipesPage self);
+	private delegate void HookInitFilterButtons(OrigInitFilterButtons orig, CraftingUIState.RecipesPage self);
+
+	private static readonly FieldInfo RecipeButtonsField = typeof(CraftingUIState.RecipesPage).GetField(
+		"recipeButtons",
+		BindingFlags.Instance | BindingFlags.NonPublic)
+		?? throw new MissingFieldException(typeof(CraftingUIState.RecipesPage).FullName, "recipeButtons");
+	private static readonly HashSet<NewUIButtonChoice> HookedRecipeButtons = [];
+	private static volatile bool includePartialRecipes;
+
+	private static int PartialToggleChoice => 2
+		+ (MagicStorageConfig.CraftingFavoritingEnabled ? 1 : 0)
+		+ (MagicStorageConfig.RecipeBlacklistEnabled ? 1 : 0);
 
 	public override void Load() {
 		if (!ModLoader.TryGetMod("MagicStorage", out Mod magicStorage))
@@ -40,23 +55,102 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 			modifiers: null)
 			?? throw new MissingMethodException(typeof(MagicUI).FullName, nameof(MagicUI.SetRefresh));
 
+		MethodInfo initFilterButtons = typeof(CraftingUIState.RecipesPage).GetMethod(
+			"InitFilterButtons",
+			BindingFlags.Instance | BindingFlags.NonPublic)
+			?? throw new MissingMethodException(typeof(CraftingUIState.RecipesPage).FullName, "InitFilterButtons");
+
 		MonoModHooks.Add(getRecipes, (HookGetRecipes)FilterRecipes);
 		MonoModHooks.Add(setRefresh, (HookSetRefresh)ForceFullRefreshWhenSelected);
+		MonoModHooks.Add(initFilterButtons, (HookInitFilterButtons)AddPartialRecipeButton);
 	}
 
 	private static ParallelQuery<Recipe> FilterRecipes(OrigGetRecipes orig, StorageGUI.ThreadContext thread) {
 		ParallelQuery<Recipe> recipes = orig(thread);
-		if (thread.filterMode != ModContent.GetInstance<PartialIngredientsFilter>().Type)
+		if (!includePartialRecipes || !ReplaceAvailableChoiceWithCombinedChoice(thread.state))
 			return recipes;
 
 		var inventory = CraftingGUI.GetCurrentInventory();
-		return recipes.Where(recipe => recipe.requiredItem.Any(ingredient => inventory.GetTotalIngredientQuantity(recipe, ingredient.type) > 0));
+		return recipes.Where(recipe => CraftingGUI.IsAvailable(recipe)
+			|| recipe.requiredItem.Any(ingredient => inventory.GetTotalIngredientQuantity(recipe, ingredient.type) > 0));
 	}
 
 	private static void ForceFullRefreshWhenSelected(OrigSetRefresh orig, bool forceFullRefresh) {
-		bool partialFilterSelected = MagicUI.IsCraftingUIOpen()
-			&& FilteringOptionLoader.Selected == ModContent.GetInstance<PartialIngredientsFilter>().Type;
+		orig(forceFullRefresh || MagicUI.IsCraftingUIOpen() && includePartialRecipes);
+	}
 
-		orig(forceFullRefresh || partialFilterSelected);
+	private static void AddPartialRecipeButton(OrigInitFilterButtons orig, CraftingUIState.RecipesPage self) {
+		orig(self);
+
+		if (self is DecraftingUIState.ShimmeringPage)
+			return;
+
+		NewUIButtonChoice buttons = GetRecipeButtons(self);
+		buttons.AssignButtons(CreateRecipeButtons());
+
+		if (includePartialRecipes)
+			buttons.GeneralChoices.Add(PartialToggleChoice);
+
+		PositionToggleOnRecipeRow(buttons);
+
+		if (HookedRecipeButtons.Add(buttons)) {
+			buttons.OnChoiceClicked += (choice, _) => {
+				if (choice != PartialToggleChoice)
+					return;
+
+				includePartialRecipes = buttons.GeneralChoices.Contains(choice);
+				MagicUI.SetRefresh(forceFullRefresh: true);
+			};
+		}
+	}
+
+	private static IEnumerable<ButtonChoiceInfo> CreateRecipeButtons() {
+		yield return new ButtonChoiceInfo("MagicStorage/Assets/RecipeAvailable", "Mods.MagicStorage.RecipeAvailable", false);
+		yield return new ButtonChoiceInfo("MagicStorage/Assets/RecipeAll", "Mods.MagicStorage.RecipeAll", false);
+
+		if (MagicStorageConfig.CraftingFavoritingEnabled)
+			yield return new ButtonChoiceInfo("MagicStorage/Assets/FilterMisc", "Mods.MagicStorage.ShowOnlyFavorited", false);
+
+		if (MagicStorageConfig.RecipeBlacklistEnabled)
+			yield return new ButtonChoiceInfo("MagicStorage/Assets/RecipeAll", "Mods.MagicStorage.RecipeBlacklist", false);
+
+		yield return new ButtonChoiceInfo(
+			"JackysMagicStorageTweaks/Assets/PartialIngredients",
+			"Mods.JackysMagicStorageTweaks.IncludePartialRecipes",
+			true);
+	}
+
+	private static NewUIButtonChoice GetRecipeButtons(CraftingUIState.RecipesPage page)
+		=> (NewUIButtonChoice)RecipeButtonsField.GetValue(page)!;
+
+	private static void PositionToggleOnRecipeRow(NewUIButtonChoice buttons) {
+		Terraria.UI.UIElement toggle = buttons.Children.Last();
+		const int buttonSize = 32;
+		const int buttonPadding = 1;
+		int buttonCount = PartialToggleChoice + 1;
+
+		toggle.Left.Set(PartialToggleChoice * (buttonSize + buttonPadding), 0f);
+		toggle.Top.Set(0f, 0f);
+
+		float width = buttonCount * (buttonSize + buttonPadding) - buttonPadding;
+		buttons.Width.Set(width, 0f);
+		buttons.MinWidth.Set(width, 0f);
+		buttons.Height.Set(buttonSize, 0f);
+		buttons.MinHeight.Set(buttonSize, 0f);
+	}
+
+	private static bool ReplaceAvailableChoiceWithCombinedChoice(object state) {
+		if (state is null)
+			return false;
+
+		FieldInfo recipeFilterChoice = state.GetType().GetField(
+			"recipeFilterChoice",
+			BindingFlags.Instance | BindingFlags.Public);
+
+		if (recipeFilterChoice?.GetValue(state) is not int choice || choice != CraftingGUI.RecipeButtonsAvailableChoice)
+			return false;
+
+		recipeFilterChoice.SetValue(state, PartialToggleChoice);
+		return true;
 	}
 }
