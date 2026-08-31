@@ -6,7 +6,7 @@ For now, it adds an **Include partial recipes** toggle to the Crafting Access. T
 
 ## Demo
 
-[Watch the 15-second demo (silent MP4).](media/partial-recipes-demo.mp4)
+[![Demo](media/partial-recipes-demo.gif)](media/partial-recipes-demo.mp4)
 
 The long-term goal is for these improvements to become part of Magic Storage itself. In the meantime, more small tweaks may be added here.
 
