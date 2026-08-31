@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\tModLoader.targets" />
+  <PropertyGroup>
+    <AssemblyName>JackysMagicStorageTweaks</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MagicStorage">
+      <HintPath>..\references\1.4.4\MagicStorage.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

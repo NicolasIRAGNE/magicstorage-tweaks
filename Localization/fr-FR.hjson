@@ -1,0 +1,7 @@
+Mods: {
+	JackysMagicStorageTweaks: {
+		FilteringOption: {
+			PartialIngredients.Tooltip: Afficher les recettes avec au moins un ingrédient stocké
+		}
+	}
+}
