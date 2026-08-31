@@ -15,8 +15,8 @@ namespace JackysMagicStorageTweaks;
 public sealed class JackysMagicStorageTweaksMod : Mod {
 	private delegate ParallelQuery<Recipe> OrigGetRecipes(StorageGUI.ThreadContext thread);
 	private delegate ParallelQuery<Recipe> HookGetRecipes(OrigGetRecipes orig, StorageGUI.ThreadContext thread);
-	private delegate void OrigSetRefresh(bool forceFullRefresh);
-	private delegate void HookSetRefresh(OrigSetRefresh orig, bool forceFullRefresh);
+	private delegate void OrigRefreshItemsInner();
+	private delegate void HookRefreshItemsInner(OrigRefreshItemsInner orig);
 	private delegate void OrigInitFilterButtons(CraftingUIState.RecipesPage self);
 	private delegate void HookInitFilterButtons(OrigInitFilterButtons orig, CraftingUIState.RecipesPage self);
 
@@ -47,13 +47,10 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 			modifiers: null)
 			?? throw new MissingMethodException(typeof(ItemSorter).FullName, nameof(ItemSorter.GetRecipes));
 
-		MethodInfo setRefresh = typeof(MagicUI).GetMethod(
-			nameof(MagicUI.SetRefresh),
-			BindingFlags.Public | BindingFlags.Static,
-			binder: null,
-			types: [typeof(bool)],
-			modifiers: null)
-			?? throw new MissingMethodException(typeof(MagicUI).FullName, nameof(MagicUI.SetRefresh));
+		MethodInfo refreshItemsInner = typeof(CraftingGUI).GetMethod(
+			"RefreshItems_Inner",
+			BindingFlags.NonPublic | BindingFlags.Static)
+			?? throw new MissingMethodException(typeof(CraftingGUI).FullName, "RefreshItems_Inner");
 
 		MethodInfo initFilterButtons = typeof(CraftingUIState.RecipesPage).GetMethod(
 			"InitFilterButtons",
@@ -61,7 +58,7 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 			?? throw new MissingMethodException(typeof(CraftingUIState.RecipesPage).FullName, "InitFilterButtons");
 
 		MonoModHooks.Add(getRecipes, (HookGetRecipes)FilterRecipes);
-		MonoModHooks.Add(setRefresh, (HookSetRefresh)ForceFullRefreshWhenSelected);
+		MonoModHooks.Add(refreshItemsInner, (HookRefreshItemsInner)ForceFullRecipeRefreshWhenIncluded);
 		MonoModHooks.Add(initFilterButtons, (HookInitFilterButtons)AddPartialRecipeButton);
 	}
 
@@ -75,8 +72,11 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 			|| recipe.requiredItem.Any(ingredient => inventory.GetTotalIngredientQuantity(recipe, ingredient.type) > 0));
 	}
 
-	private static void ForceFullRefreshWhenSelected(OrigSetRefresh orig, bool forceFullRefresh) {
-		orig(forceFullRefresh || MagicUI.IsCraftingUIOpen() && includePartialRecipes);
+	private static void ForceFullRecipeRefreshWhenIncluded(OrigRefreshItemsInner orig) {
+		if (MagicUI.IsCraftingUIOpen() && includePartialRecipes)
+			MagicUI.ForceNextRefreshToBeFull = true;
+
+		orig();
 	}
 
 	private static void AddPartialRecipeButton(OrigInitFilterButtons orig, CraftingUIState.RecipesPage self) {
@@ -147,10 +147,14 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 			"recipeFilterChoice",
 			BindingFlags.Instance | BindingFlags.Public);
 
-		if (recipeFilterChoice?.GetValue(state) is not int choice || choice != CraftingGUI.RecipeButtonsAvailableChoice)
+		if (recipeFilterChoice?.GetValue(state) is not int choice)
 			return false;
 
-		recipeFilterChoice.SetValue(state, PartialToggleChoice);
-		return true;
+		if (choice == CraftingGUI.RecipeButtonsAvailableChoice) {
+			recipeFilterChoice.SetValue(state, PartialToggleChoice);
+			return true;
+		}
+
+		return choice == PartialToggleChoice;
 	}
 }
