@@ -124,12 +124,17 @@ public sealed class JackysMagicStorageTweaksMod : Mod {
 		=> (NewUIButtonChoice)RecipeButtonsField.GetValue(page)!;
 
 	private static void PositionToggleOnRecipeRow(NewUIButtonChoice buttons) {
-		Terraria.UI.UIElement toggle = buttons.Children.Last();
+		Terraria.UI.UIElement[] elements = buttons.Children.ToArray();
+		Terraria.UI.UIElement toggle = elements[^1];
 		const int buttonSize = 32;
 		const int buttonPadding = 1;
+		const int togglePosition = 2;
 		int buttonCount = PartialToggleChoice + 1;
 
-		toggle.Left.Set(PartialToggleChoice * (buttonSize + buttonPadding), 0f);
+		for (int i = togglePosition; i < elements.Length - 1; i++)
+			elements[i].Left.Set((i + 1) * (buttonSize + buttonPadding), 0f);
+
+		toggle.Left.Set(togglePosition * (buttonSize + buttonPadding), 0f);
 		toggle.Top.Set(0f, 0f);
 
 		float width = buttonCount * (buttonSize + buttonPadding) - buttonPadding;
